@@ -146,7 +146,7 @@ app.post('/submitEmail', (req,res) => {
 });
 
 
-app.get('/createUser', (req, res) => {
+app.get('/signup', (req, res) => {
     var html = `
     create user
     <form action='/submitUser' method='post'>
@@ -193,7 +193,7 @@ app.post('/submitUser', async (req, res) => {
         console.log(validationResult.error);
         var html = `
         <h3>Error: ${errors}</h3>
-        <a href="/createUser">Go back to signup</a>
+        <a href="/signup">Go back to signup</a>
         `;
         res.send(html);
         return;
