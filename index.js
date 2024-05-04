@@ -162,6 +162,7 @@ app.get('/createUser', (req, res) => {
 
 
 app.get('/login', (req, res) => {
+    var errorMessage = req.query.error ? "Invalid email or password. Please try again." : "";
     var html = `
     log in
     <form action='/loggingin' method='post'>
@@ -169,6 +170,7 @@ app.get('/login', (req, res) => {
     <input name='password' type='password' placeholder='password'>
     <button>Submit</button>
     </form>
+    <p style="color: red;">${errorMessage}</p>
     `;
     res.send(html);
 });
@@ -218,30 +220,24 @@ app.post('/loggingin', async (req, res) => {
     const validationResult = schema.validate(email);
     if (validationResult.error != null) {
         console.log(validationResult.error);
-        res.redirect("/login");
+        res.redirect("/login?error=1");
         return;
     }
 
     const result = await userCollection.find({ email: email }).project({ username: 1, password: 1, _id: 0 }).toArray();
 
-    if (result.length != 1) {
-        console.log("User not found");
-        res.redirect("/login");
+    if (result.length != 1 || !(await bcrypt.compare(password, result[0].password))) {
+        console.log("Authentication failed");
+        res.redirect("/login?error=1");
         return;
     }
-    if (await bcrypt.compare(password, result[0].password)) {
-        console.log("Correct password");
-        req.session.authenticated = true;
-        req.session.username = result[0].username; // Store username in session
-        req.session.cookie.maxAge = expireTime;
 
-        res.redirect('/');  // Redirect to home page after login
-        return;
-    } else {
-        console.log("Incorrect password");
-        res.redirect("/login");
-        return;
-    }
+    console.log("Correct password");
+    req.session.authenticated = true;
+    req.session.username = result[0].username;
+    req.session.cookie.maxAge = expireTime;
+
+    res.redirect('/');
 });
 
 
